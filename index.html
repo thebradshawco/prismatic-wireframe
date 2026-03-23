@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Technical Liminal - 4:5 Feed / 3:4 Grid Safe</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        /* 4:5 Vertical Aspect Ratio for Feed Upload */
+        canvas { display: block; height: 100vh !important; width: auto !important; aspect-ratio: 4/5; }
+    </style>
+</head>
+<body>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(1080, 1350);
+        document.body.appendChild(renderer.domElement);
+
+        // Adjusted FOV and Z-position to center the object for 3:4 Grid Crop
+        const camera = new THREE.PerspectiveCamera(50, 4 / 5, 1, 3000);
+        camera.position.set(0, 30, 245);
+
+        // 1. THE DIAMOND
+        const gemGroup = new THREE.Group();
+        gemGroup.position.y = 50; // Lowered slightly to center in the 3:4 frame
+        scene.add(gemGroup);
+
+        function createDiamondGeo() {
+            const geo = new THREE.BufferGeometry();
+            const verts = [];
+            const rTop = 10, rMid = 16, yTop = 9, yMid = 0, yBot = -22;
+            const segments = 24;
+            for (let i = 0; i < segments; i++) {
+                const a = (i / segments) * Math.PI * 2, na = ((i + 1) / segments) * Math.PI * 2;
+                const c1 = Math.cos(a), s1 = Math.sin(a), c2 = Math.cos(na), s2 = Math.sin(na);
+                verts.push(0, yTop, 0, c1*rTop, yTop, s1*rTop, c2*rTop, yTop, s2*rTop);
+                verts.push(c1*rTop, yTop, s1*rTop, c1*rMid, yMid, s1*rMid, c2*rMid, yMid, s2*rMid);
+                verts.push(c1*rTop, yTop, s1*rTop, c2*rMid, yMid, s2*rMid, c2*rTop, yTop, s2*rTop);
+                verts.push(c1*rMid, yMid, s1*rMid, 0, yBot, 0, c2*rMid, yMid, s2*rMid);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            return geo;
+        }
+
+        const diamondGeo = createDiamondGeo();
+        const coreMat = new THREE.MeshBasicMaterial({ color: 0x88C7D6, wireframe: true });
+        const coreDiamond = new THREE.Mesh(diamondGeo, coreMat);
+        
+        // Locked Scale
+        coreDiamond.scale.set(7, 7, 7);
+        gemGroup.add(coreDiamond);
+
+        // 2. THE FLAT PLAIN LANDSCAPE
+        const landscapeSize = 4000;
+        const res = 90; 
+        const floorGeo = new THREE.PlaneGeometry(landscapeSize, landscapeSize, res, res);
+        const pos = floorGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) { pos.setZ(i, 0); }
+
+        const floorMat = new THREE.MeshBasicMaterial({ color: 0x906684, wireframe: true });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -20;
+        scene.add(floor);
+
+        // 3. ANIMATION (15S LOOP)
+        const duration = 15000, start = Date.now();
+        function animate() {
+            requestAnimationFrame(animate);
+            const progress = ((Date.now() - start) % duration) / duration;
+
+            gemGroup.rotation.y = progress * Math.PI * 2;
+            gemGroup.position.y = 50; // Locked height
+
+            floor.position.z = (progress * (landscapeSize / res) * 40) % (landscapeSize / res * 40);
+
+            camera.lookAt(0, 30, 0);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = 4 / 5;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
