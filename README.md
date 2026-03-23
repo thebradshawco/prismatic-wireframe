@@ -1,4 +1,4 @@
-# prismatic-wireframe
+# thebradshaw.co - prismatic-wireframe
 
 **A high-contrast Three.js execution featuring a spinning wireframe diamond over a liminal landscape. A minimalist 3D design study exploring geometric form and perspective, tailored for thebradshaw.co.**
 
